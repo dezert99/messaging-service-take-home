@@ -1,0 +1,593 @@
+{
+  "info": {
+    "name": "Messaging Service API",
+    "description": "Complete API collection for the unified messaging service supporting SMS/MMS and Email",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "messaging-service-api-collection"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": ["{{base_url}}"],
+          "path": ["health"]
+        },
+        "description": "Check if the service is running and healthy"
+      },
+      "response": []
+    },
+    {
+      "name": "Message Endpoints",
+      "item": [
+        {
+          "name": "Send SMS",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"+12345678901\",\n  \"to\": \"+19876543210\",\n  \"type\": \"sms\",\n  \"body\": \"Hello! This is a test SMS message.\",\n  \"timestamp\": \"{{$isoTimestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/messages/sms",
+              "host": ["{{base_url}}"],
+              "path": ["api", "messages", "sms"]
+            },
+            "description": "Send an SMS message"
+          },
+          "response": []
+        },
+        {
+          "name": "Send MMS with Attachments",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"+12345678901\",\n  \"to\": \"+19876543210\",\n  \"type\": \"mms\",\n  \"body\": \"Check out this image!\",\n  \"attachments\": [\n    \"https://example.com/image1.jpg\",\n    \"https://example.com/document.pdf\"\n  ],\n  \"timestamp\": \"{{$isoTimestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/messages/sms",
+              "host": ["{{base_url}}"],
+              "path": ["api", "messages", "sms"]
+            },
+            "description": "Send an MMS message with attachments"
+          },
+          "response": []
+        },
+        {
+          "name": "Send Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"sender@example.com\",\n  \"to\": \"recipient@example.com\",\n  \"body\": \"<h1>Welcome!</h1><p>This is a test email with <strong>HTML content</strong>.</p><p>Thanks for testing our messaging service!</p>\",\n  \"attachments\": [\n    \"https://example.com/report.pdf\",\n    \"https://example.com/logo.png\"\n  ],\n  \"timestamp\": \"{{$isoTimestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/messages/email",
+              "host": ["{{base_url}}"],
+              "path": ["api", "messages", "email"]
+            },
+            "description": "Send an email message with HTML content"
+          },
+          "response": []
+        },
+        {
+          "name": "Send SMS with Force Error",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"+12345678901\",\n  \"to\": \"+19876543210\",\n  \"type\": \"sms\",\n  \"body\": \"This message will fail\",\n  \"timestamp\": \"{{$isoTimestamp}}\",\n  \"_forceError\": {\n    \"code\": 500,\n    \"message\": \"Simulated provider error\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/messages/sms",
+              "host": ["{{base_url}}"],
+              "path": ["api", "messages", "sms"]
+            },
+            "description": "Test error handling with forced provider error"
+          },
+          "response": []
+        },
+        {
+          "name": "Send Email with Force Error",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"error@example.com\",\n  \"to\": \"test@example.com\",\n  \"body\": \"<p>This email will fail</p>\",\n  \"timestamp\": \"{{$isoTimestamp}}\",\n  \"_forceError\": {\n    \"code\": 429,\n    \"message\": \"Rate limit exceeded\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/messages/email",
+              "host": ["{{base_url}}"],
+              "path": ["api", "messages", "email"]
+            },
+            "description": "Test rate limiting error with forced 429 response"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Webhook Endpoints",
+      "item": [
+        {
+          "name": "Inbound SMS Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"+19876543210\",\n  \"to\": \"+12345678901\",\n  \"type\": \"sms\",\n  \"messaging_provider_id\": \"SM{{$randomAlphaNumeric}}{{$randomAlphaNumeric}}{{$randomAlphaNumeric}}\",\n  \"body\": \"Thanks for your message! This is an automated reply.\",\n  \"timestamp\": \"{{$isoTimestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/webhooks/sms",
+              "host": ["{{base_url}}"],
+              "path": ["api", "webhooks", "sms"]
+            },
+            "description": "Simulate receiving an inbound SMS message"
+          },
+          "response": []
+        },
+        {
+          "name": "Inbound MMS Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"+19876543210\",\n  \"to\": \"+12345678901\",\n  \"type\": \"mms\",\n  \"messaging_provider_id\": \"MM{{$randomAlphaNumeric}}{{$randomAlphaNumeric}}{{$randomAlphaNumeric}}\",\n  \"body\": \"Here's a photo I took!\",\n  \"attachments\": [\n    \"https://example.com/photo.jpg\",\n    \"https://example.com/video.mp4\"\n  ],\n  \"timestamp\": \"{{$isoTimestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/webhooks/sms",
+              "host": ["{{base_url}}"],
+              "path": ["api", "webhooks", "sms"]
+            },
+            "description": "Simulate receiving an inbound MMS message with attachments"
+          },
+          "response": []
+        },
+        {
+          "name": "Inbound Email Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"customer@example.com\",\n  \"to\": \"support@example.com\",\n  \"xillio_id\": \"{{$randomAlphaNumeric}}.filter001.{{$timestamp}}.0\",\n  \"body\": \"<h2>Customer Inquiry</h2><p>Hi there!</p><p>I have a question about your service. Could you please help me with...</p><p>Thanks!</p>\",\n  \"attachments\": [\n    \"https://example.com/screenshot.png\"\n  ],\n  \"timestamp\": \"{{$isoTimestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/webhooks/email",
+              "host": ["{{base_url}}"],
+              "path": ["api", "webhooks", "email"]
+            },
+            "description": "Simulate receiving an inbound email message"
+          },
+          "response": []
+        },
+        {
+          "name": "Twilio Status Webhook - Delivered",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"MessageSid\": \"SM{{$randomAlphaNumeric}}{{$randomAlphaNumeric}}{{$randomAlphaNumeric}}\",\n  \"MessageStatus\": \"delivered\",\n  \"AccountSid\": \"ACmock1234567890abcdef1234567890\",\n  \"From\": \"+12345678901\",\n  \"To\": \"+19876543210\",\n  \"ApiVersion\": \"2010-04-01\",\n  \"Body\": \"Your message was delivered successfully\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/webhooks/sms/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "webhooks", "sms", "status"]
+            },
+            "description": "Simulate Twilio status update - message delivered"
+          },
+          "response": []
+        },
+        {
+          "name": "Twilio Status Webhook - Failed",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"MessageSid\": \"SM{{$randomAlphaNumeric}}{{$randomAlphaNumeric}}{{$randomAlphaNumeric}}\",\n  \"MessageStatus\": \"failed\",\n  \"AccountSid\": \"ACmock1234567890abcdef1234567890\",\n  \"From\": \"+12345678901\",\n  \"To\": \"+19876543210\",\n  \"ApiVersion\": \"2010-04-01\",\n  \"ErrorCode\": \"30008\",\n  \"ErrorMessage\": \"Unknown error\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/webhooks/sms/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "webhooks", "sms", "status"]
+            },
+            "description": "Simulate Twilio status update - message failed"
+          },
+          "response": []
+        },
+        {
+          "name": "SendGrid Event Webhook - Multiple Events",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"email\": \"recipient@example.com\",\n    \"timestamp\": {{$timestamp}},\n    \"smtp-id\": \"<{{$randomAlphaNumeric}}.{{$randomAlphaNumeric}}@example.com>\",\n    \"event\": \"processed\",\n    \"sg_event_id\": \"{{$randomUUID}}\",\n    \"sg_message_id\": \"{{$randomAlphaNumeric}}.filter001.{{$timestamp}}.0\"\n  },\n  {\n    \"email\": \"recipient@example.com\",\n    \"timestamp\": {{$timestamp}},\n    \"smtp-id\": \"<{{$randomAlphaNumeric}}.{{$randomAlphaNumeric}}@example.com>\",\n    \"event\": \"delivered\",\n    \"sg_event_id\": \"{{$randomUUID}}\",\n    \"sg_message_id\": \"{{$randomAlphaNumeric}}.filter001.{{$timestamp}}.0\",\n    \"response\": \"250 OK\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/webhooks/email/events",
+              "host": ["{{base_url}}"],
+              "path": ["api", "webhooks", "email", "events"]
+            },
+            "description": "Simulate SendGrid event webhook with multiple events"
+          },
+          "response": []
+        },
+        {
+          "name": "SendGrid Event Webhook - Bounce",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"email\": \"invalid@example.com\",\n    \"timestamp\": {{$timestamp}},\n    \"smtp-id\": \"<{{$randomAlphaNumeric}}.{{$randomAlphaNumeric}}@example.com>\",\n    \"event\": \"bounce\",\n    \"sg_event_id\": \"{{$randomUUID}}\",\n    \"sg_message_id\": \"{{$randomAlphaNumeric}}.filter001.{{$timestamp}}.0\",\n    \"reason\": \"550 5.1.1 The email account that you tried to reach does not exist\",\n    \"type\": \"bounce\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/webhooks/email/events",
+              "host": ["{{base_url}}"],
+              "path": ["api", "webhooks", "email", "events"]
+            },
+            "description": "Simulate SendGrid bounce event"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Conversation Endpoints",
+      "item": [
+        {
+          "name": "Get Conversations for Phone Number",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/conversations?participant=%2B12345678901&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "conversations"],
+              "query": [
+                {
+                  "key": "participant",
+                  "value": "%2B12345678901"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Get all conversations for a phone number participant"
+          },
+          "response": []
+        },
+        {
+          "name": "Get SMS Conversations Only",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/conversations?participant=%2B12345678901&channelType=SMS&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "conversations"],
+              "query": [
+                {
+                  "key": "participant",
+                  "value": "%2B12345678901"
+                },
+                {
+                  "key": "channelType",
+                  "value": "SMS"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get only SMS conversations for a participant"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Email Conversations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/conversations?participant=sender@example.com&channelType=EMAIL&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "conversations"],
+              "query": [
+                {
+                  "key": "participant",
+                  "value": "sender@example.com"
+                },
+                {
+                  "key": "channelType",
+                  "value": "EMAIL"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get email conversations for an email participant"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Messages for Conversation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/conversations/{{conversation_id}}/messages?page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "conversations", "{{conversation_id}}", "messages"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "Get all messages for a specific conversation (replace {{conversation_id}} with actual ID)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Rate Limiting Tests",
+      "item": [
+        {
+          "name": "Rapid SMS Requests (Rate Limit Test)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"+15551234567\",\n  \"to\": \"+15559876543\",\n  \"type\": \"sms\",\n  \"body\": \"Rate limit test message #{{$randomInt}}\",\n  \"timestamp\": \"{{$isoTimestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/messages/sms",
+              "host": ["{{base_url}}"],
+              "path": ["api", "messages", "sms"]
+            },
+            "description": "Send multiple requests rapidly to test SMS rate limiting"
+          },
+          "response": []
+        },
+        {
+          "name": "Rapid Email Requests (Rate Limit Test)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"test{{$randomInt}}@example.com\",\n  \"to\": \"ratelimit@example.com\",\n  \"body\": \"<p>Rate limit test email #{{$randomInt}}</p>\",\n  \"timestamp\": \"{{$isoTimestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/messages/email",
+              "host": ["{{base_url}}"],
+              "path": ["api", "messages", "email"]
+            },
+            "description": "Send multiple requests rapidly to test Email rate limiting"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Error Handling Tests",
+      "item": [
+        {
+          "name": "Invalid Phone Number Format",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"invalid-phone\",\n  \"to\": \"+19876543210\",\n  \"type\": \"sms\",\n  \"body\": \"This should fail validation\",\n  \"timestamp\": \"{{$isoTimestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/messages/sms",
+              "host": ["{{base_url}}"],
+              "path": ["api", "messages", "sms"]
+            },
+            "description": "Test validation error handling"
+          },
+          "response": []
+        },
+        {
+          "name": "Missing Required Fields",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"+12345678901\",\n  \"type\": \"sms\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/messages/sms",
+              "host": ["{{base_url}}"],
+              "path": ["api", "messages", "sms"]
+            },
+            "description": "Test missing required field validation"
+          },
+          "response": []
+        },
+        {
+          "name": "Invalid Channel Type",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/conversations?participant=+12345678901&channelType=INVALID",
+              "host": ["{{base_url}}"],
+              "path": ["api", "conversations"],
+              "query": [
+                {
+                  "key": "participant",
+                  "value": "+12345678901"
+                },
+                {
+                  "key": "channelType",
+                  "value": "INVALID"
+                }
+              ]
+            },
+            "description": "Test invalid channel type validation"
+          },
+          "response": []
+        },
+        {
+          "name": "Missing Participant Parameter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/conversations?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "conversations"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Test missing required participant parameter"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "conversation_id",
+      "value": "replace-with-actual-conversation-id",
+      "type": "string"
+    }
+  ]
+}
