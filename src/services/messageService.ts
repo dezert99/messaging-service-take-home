@@ -4,30 +4,44 @@ import { determineMessageType, getChannelType } from '../utils/messageType';
 import { findOrCreateConversation } from './conversationService';
 import { MockSmsProvider, MockEmailProvider, ProviderError } from '../providers';
 import { SendSmsRequest, SendEmailRequest } from '../types/requests';
-import { logger } from '../utils/logger';
+import { logger, logMessage, logError } from '../utils/logger';
+import { DatabaseError } from '../middleware/errorHandler';
 
 const smsProvider = new MockSmsProvider();
 const emailProvider = new MockEmailProvider();
 
 export async function sendSmsMessage(request: SendSmsRequest) {
-  const messageType = determineMessageType(request);
-  const channelType = getChannelType(messageType);
-  
-  // Find or create conversation
-  const conversation = await findOrCreateConversation(
-    request.from,
-    request.to,
-    channelType
-  );
+  logger.info('Starting SMS message send', {
+    from: request.from,
+    to: request.to,
+    type: request.type,
+    hasAttachments: !!(request.attachments && request.attachments.length > 0)
+  });
 
-  // Create message record with PENDING status
-  const message = await prisma.message.create({
-    data: {
+  try {
+    const messageType = determineMessageType(request);
+    const channelType = getChannelType(messageType);
+    
+    // Find or create conversation
+    const conversation = await findOrCreateConversation(
+      request.from,
+      request.to,
+      channelType
+    );
+
+    logger.debug('Conversation found/created', {
       conversationId: conversation.id,
-      from: request.from,
-      to: request.to,
-      type: messageType,
-      body: request.body,
+      participants: [conversation.participant1, conversation.participant2]
+    });
+
+    // Create message record with PENDING status
+    const message = await prisma.message.create({
+      data: {
+        conversationId: conversation.id,
+        from: request.from,
+        to: request.to,
+        type: messageType,
+        body: request.body,
       attachments: request.attachments || [],
       direction: MessageDirection.OUTBOUND,
       status: MessageStatus.PENDING,
@@ -36,8 +50,15 @@ export async function sendSmsMessage(request: SendSmsRequest) {
     }
   });
 
+  logMessage('created', message);
+
   try {
     // Send via provider
+    logger.debug('Sending to SMS provider', {
+      messageId: message.id,
+      provider: 'twilio'
+    });
+
     const response = await smsProvider.sendMessage({
       from: request.from,
       to: request.to,
@@ -60,12 +81,7 @@ export async function sendSmsMessage(request: SendSmsRequest) {
       }
     });
 
-    logger.info('SMS message sent successfully', {
-      messageId: message.id,
-      providerId: response.sid,
-      from: request.from,
-      to: request.to
-    });
+    logMessage('sent', updatedMessage);
 
     return {
       message: updatedMessage,
@@ -73,11 +89,21 @@ export async function sendSmsMessage(request: SendSmsRequest) {
     };
 
   } catch (error) {
-    // Update message status to FAILED
-    const failedMessage = await prisma.message.update({
-      where: { id: message.id },
-      data: {
-        status: MessageStatus.FAILED,
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    logError(error as Error, {
+      context: 'SMS provider send',
+      messageId: message.id,
+      from: request.from,
+      to: request.to
+    });
+
+    try {
+      // Update message status to FAILED
+      const failedMessage = await prisma.message.update({
+        where: { id: message.id },
+        data: {
+          status: MessageStatus.FAILED,
         metadata: {
           error: {
             message: (error as Error).message,
@@ -87,45 +113,70 @@ export async function sendSmsMessage(request: SendSmsRequest) {
       }
     });
 
-    logger.error('SMS message failed', {
-      messageId: message.id,
-      error: (error as Error).message,
-      statusCode: (error as ProviderError).statusCode,
-      from: request.from,
-      to: request.to
-    });
+    logMessage('failed', failedMessage);
 
     // Re-throw with provider status code
     const providerError = error as ProviderError;
     if (providerError.statusCode) {
-      const newError = new Error(providerError.message) as ProviderError;
-      newError.statusCode = providerError.statusCode;
-      throw newError;
+      throw new ProviderError(providerError.message, 'twilio', providerError.statusCode?.toString());
     }
     
     throw error;
+    
+  } catch (dbError) {
+    logError(dbError as Error, {
+      context: 'Database update after SMS failure',
+      messageId: message.id
+    });
+    throw new DatabaseError('Failed to update message status', 'message_update');
   }
 }
 
-export async function sendEmailMessage(request: SendEmailRequest) {
-  const messageType = MessageType.EMAIL;
-  const channelType = ChannelType.EMAIL;
+} catch (error) {
+  logError(error as Error, {
+    context: 'SMS message creation',
+    from: request.from,
+    to: request.to
+  });
   
-  // Find or create conversation
-  const conversation = await findOrCreateConversation(
-    request.from,
-    request.to,
-    channelType
-  );
+  if (error instanceof Error && error.message.includes('Prisma')) {
+    throw new DatabaseError('Failed to create message', 'message_create');
+  }
+  throw error;
+}
+}
 
-  // Create message record with PENDING status
-  const message = await prisma.message.create({
-    data: {
+export async function sendEmailMessage(request: SendEmailRequest) {
+  logger.info('Starting email message send', {
+    from: request.from,
+    to: request.to,
+    hasAttachments: !!(request.attachments && request.attachments.length > 0)
+  });
+
+  try {
+    const messageType = MessageType.EMAIL;
+    const channelType = ChannelType.EMAIL;
+    
+    // Find or create conversation
+    const conversation = await findOrCreateConversation(
+      request.from,
+      request.to,
+      channelType
+    );
+
+    logger.debug('Email conversation found/created', {
       conversationId: conversation.id,
-      from: request.from,
-      to: request.to,
-      type: messageType,
-      body: request.body,
+      participants: [conversation.participant1, conversation.participant2]
+    });
+
+    // Create message record with PENDING status
+    const message = await prisma.message.create({
+      data: {
+        conversationId: conversation.id,
+        from: request.from,
+        to: request.to,
+        type: messageType,
+        body: request.body,
       attachments: request.attachments || [],
       direction: MessageDirection.OUTBOUND,
       status: MessageStatus.PENDING,
@@ -134,8 +185,15 @@ export async function sendEmailMessage(request: SendEmailRequest) {
     }
   });
 
+  logMessage('created', message);
+
   try {
     // Send via provider
+    logger.debug('Sending to email provider', {
+      messageId: message.id,
+      provider: 'sendgrid'
+    });
+
     const response = await emailProvider.sendEmail({
       from: request.from,
       to: request.to,
@@ -157,12 +215,7 @@ export async function sendEmailMessage(request: SendEmailRequest) {
       }
     });
 
-    logger.info('Email message sent successfully', {
-      messageId: message.id,
-      providerId: response.message_id,
-      from: request.from,
-      to: request.to
-    });
+    logMessage('sent', updatedMessage);
 
     return {
       message: updatedMessage,
@@ -170,12 +223,20 @@ export async function sendEmailMessage(request: SendEmailRequest) {
     };
 
   } catch (error) {
-    // Update message status to FAILED
-    const failedMessage = await prisma.message.update({
-      where: { id: message.id },
-      data: {
-        status: MessageStatus.FAILED,
-        metadata: {
+    logError(error as Error, {
+      context: 'Email provider send',
+      messageId: message.id,
+      from: request.from,
+      to: request.to
+    });
+
+    try {
+      // Update message status to FAILED
+      const failedMessage = await prisma.message.update({
+        where: { id: message.id },
+        data: {
+          status: MessageStatus.FAILED,
+          metadata: {
           error: {
             message: (error as Error).message,
             statusCode: (error as ProviderError).statusCode
@@ -184,22 +245,35 @@ export async function sendEmailMessage(request: SendEmailRequest) {
       }
     });
 
-    logger.error('Email message failed', {
-      messageId: message.id,
-      error: (error as Error).message,
-      statusCode: (error as ProviderError).statusCode,
-      from: request.from,
-      to: request.to
-    });
+    logMessage('failed', failedMessage);
 
     // Re-throw with provider status code
     const providerError = error as ProviderError;
     if (providerError.statusCode) {
-      const newError = new Error(providerError.message) as ProviderError;
-      newError.statusCode = providerError.statusCode;
-      throw newError;
+      throw new ProviderError(providerError.message, 'sendgrid', providerError.statusCode?.toString());
     }
     
     throw error;
+    
+  } catch (dbError) {
+    logError(dbError as Error, {
+      context: 'Database update after email failure',
+      messageId: message.id
+    });
+    throw new DatabaseError('Failed to update message status', 'message_update');
   }
+}
+
+} catch (error) {
+  logError(error as Error, {
+    context: 'Email message creation',
+    from: request.from,
+    to: request.to
+  });
+  
+  if (error instanceof Error && error.message.includes('Prisma')) {
+    throw new DatabaseError('Failed to create message', 'message_create');
+  }
+  throw error;
+}
 }
