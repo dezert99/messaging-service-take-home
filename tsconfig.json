@@ -31,13 +31,13 @@
     "types": ["node", "jest"]
   },
   "include": [
-    "src/**/*",
-    "tests/**/*",
-    "scripts/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
+    "tests",
+    "scripts",
     "**/*.test.ts",
     "**/*.spec.ts"
   ],

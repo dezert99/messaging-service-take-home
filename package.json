@@ -18,6 +18,7 @@
     "generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "ts-node prisma/seed.ts",
+    "db:studio": "npx prisma studio",
     "test-rate-limit": "node scripts/test-rate-limit.js"
   },
   "keywords": ["messaging", "sms", "email", "api", "typescript"],

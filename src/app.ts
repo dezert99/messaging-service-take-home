@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { requestLogger } from './middleware/requestLogger';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
+import messageRoutes from './routes/messages';
 
 dotenv.config();
 
@@ -25,9 +26,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-app.use('/api/messages', (req, res) => {
-  res.json({ message: 'Messages API endpoint - not implemented yet' });
-});
+app.use('/api/messages', messageRoutes);
 
 app.use('/api/webhooks', (req, res) => {
   res.json({ message: 'Webhooks API endpoint - not implemented yet' });
