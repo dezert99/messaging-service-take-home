@@ -7,6 +7,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
 import messageRoutes from './routes/messages';
 import webhookRoutes from './routes/webhooks';
+import conversationRoutes from './routes/conversations';
 
 dotenv.config();
 
@@ -29,10 +30,7 @@ app.get('/health', (req, res) => {
 
 app.use('/api/messages', messageRoutes);
 app.use('/api/webhooks', webhookRoutes);
-
-app.use('/api/conversations', (req, res) => {
-  res.json({ message: 'Conversations API endpoint - not implemented yet' });
-});
+app.use('/api/conversations', conversationRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

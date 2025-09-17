@@ -1,0 +1,60 @@
+#!/bin/bash
+
+echo "💬 Testing Conversation Management API"
+echo "======================================"
+echo ""
+
+BASE_URL="http://localhost:8080/api"
+
+echo "📋 Test 1: Get conversations for a participant"
+echo "GET ${BASE_URL}/conversations?participant=+12345678901"
+curl -s "${BASE_URL}/conversations?participant=+12345678901" | jq '.' || echo "Response received (jq not available)"
+echo ""
+
+echo "📋 Test 2: Get conversations with channel type filter"
+echo "GET ${BASE_URL}/conversations?participant=+12345678901&channelType=SMS"
+curl -s "${BASE_URL}/conversations?participant=+12345678901&channelType=SMS" | jq '.' || echo "Response received (jq not available)"
+echo ""
+
+echo "📋 Test 3: Get conversations with pagination"
+echo "GET ${BASE_URL}/conversations?participant=+12345678901&page=1&limit=5"
+curl -s "${BASE_URL}/conversations?participant=+12345678901&page=1&limit=5" | jq '.' || echo "Response received (jq not available)"
+echo ""
+
+echo "📋 Test 4: Test email conversations"
+echo "GET ${BASE_URL}/conversations?participant=test@example.com&channelType=EMAIL"
+curl -s "${BASE_URL}/conversations?participant=test@example.com&channelType=EMAIL" | jq '.' || echo "Response received (jq not available)"
+echo ""
+
+echo "📋 Test 5: Get messages for a conversation (you'll need a real conversation ID)"
+echo "This will fail until you have a real conversation ID from the database"
+echo "GET ${BASE_URL}/conversations/CONVERSATION_ID/messages"
+echo "Example: curl '${BASE_URL}/conversations/01234567-89ab-cdef-0123-456789abcdef/messages'"
+echo ""
+
+echo "📋 Test 6: Test error handling - missing participant"
+echo "GET ${BASE_URL}/conversations (should return 400)"
+curl -s "${BASE_URL}/conversations" | jq '.' || echo "Response received (jq not available)"
+echo ""
+
+echo "📋 Test 7: Test error handling - invalid channel type"
+echo "GET ${BASE_URL}/conversations?participant=+123&channelType=INVALID"
+curl -s "${BASE_URL}/conversations?participant=+123&channelType=INVALID" | jq '.' || echo "Response received (jq not available)"
+echo ""
+
+echo "✅ Conversation API tests completed!"
+echo ""
+echo "💡 To test with real data:"
+echo "1. First send some messages using the message endpoints"
+echo "2. Create inbound messages using the webhook endpoints" 
+echo "3. Then use the conversation endpoints to see the conversations"
+echo ""
+echo "Example workflow:"
+echo "# Send outbound SMS"
+echo "curl -X POST ${BASE_URL}/messages/sms -H 'Content-Type: application/json' -d '{\"from\":\"+12345678901\",\"to\":\"+19876543210\",\"type\":\"sms\",\"body\":\"Hello!\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)\"}'"
+echo ""
+echo "# Send inbound reply"  
+echo "curl -X POST ${BASE_URL}/webhooks/sms -H 'Content-Type: application/json' -d '{\"from\":\"+19876543210\",\"to\":\"+12345678901\",\"type\":\"sms\",\"messaging_provider_id\":\"SM123\",\"body\":\"Hi there!\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)\"}'"
+echo ""
+echo "# Check conversations"
+echo "curl '${BASE_URL}/conversations?participant=+12345678901'"

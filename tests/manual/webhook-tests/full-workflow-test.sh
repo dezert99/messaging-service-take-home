@@ -69,12 +69,23 @@ echo "Response: $INBOUND_RESPONSE"
 echo ""
 
 # Step 4: Get conversation to verify everything is linked
-echo "💬 Step 4: Retrieving conversation to verify messages are linked..."
-echo "Note: This requires the conversations endpoint to be implemented"
+echo "💬 Step 4: Retrieving conversation via API..."
 
-# For now, we'll show the SQL query you can run to check the conversation
+# Get conversations for the participant
+echo "Getting conversations for +12345678901..."
+CONVERSATIONS_RESPONSE=$(curl -s "http://localhost:8080/api/conversations?participant=%2B12345678901")
+echo "Conversations response: $CONVERSATIONS_RESPONSE"
 echo ""
-echo "📋 To verify the conversation was created correctly, run these SQL queries:"
+
+# Get messages for the specific conversation
+if [ ! -z "$CONVERSATION_ID" ]; then
+  echo "Getting messages for conversation $CONVERSATION_ID..."
+  MESSAGES_RESPONSE=$(curl -s "http://localhost:8080/api/conversations/$CONVERSATION_ID/messages")
+  echo "Messages response: $MESSAGES_RESPONSE"
+  echo ""
+fi
+
+echo "📋 You can also verify with these SQL queries:"
 echo ""
 echo "-- Check the conversation:"
 echo "SELECT * FROM \"Conversation\" WHERE id = '$CONVERSATION_ID';"
@@ -82,9 +93,6 @@ echo ""
 echo "-- Check all messages in this conversation:"
 echo "SELECT id, \"from\", \"to\", direction, status, body, \"providerMessageId\", \"createdAt\""
 echo "FROM \"Message\" WHERE \"conversationId\" = '$CONVERSATION_ID' ORDER BY \"createdAt\";"
-echo ""
-echo "-- Check status updates in metadata:"
-echo "SELECT id, status, metadata FROM \"Message\" WHERE \"conversationId\" = '$CONVERSATION_ID';"
 echo ""
 
 # Additional test: Send another inbound message to verify conversation reuse

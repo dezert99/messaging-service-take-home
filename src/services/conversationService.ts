@@ -29,7 +29,12 @@ export async function findOrCreateConversation(
   });
 }
 
-export async function getUserConversations(userIdentifier: string, channelType?: ChannelType) {
+export async function getUserConversations(
+  userIdentifier: string, 
+  channelType?: ChannelType,
+  limit: number = 20,
+  offset: number = 0
+) {
   return await prisma.conversation.findMany({
     where: {
       AND: [
@@ -45,24 +50,42 @@ export async function getUserConversations(userIdentifier: string, channelType?:
     orderBy: {
       lastMessageAt: 'desc'
     },
+    take: limit,
+    skip: offset,
     include: {
       messages: {
         take: 1,
         orderBy: {
           timestamp: 'desc'
         }
+      },
+      _count: {
+        select: {
+          messages: true
+        }
       }
     }
   });
 }
 
-export async function getConversationById(conversationId: string) {
+export async function getConversationById(
+  conversationId: string,
+  limit: number = 50,
+  offset: number = 0
+) {
   return await prisma.conversation.findUnique({
     where: { id: conversationId },
     include: {
       messages: {
         orderBy: {
           timestamp: 'asc'
+        },
+        take: limit,
+        skip: offset
+      },
+      _count: {
+        select: {
+          messages: true
         }
       }
     }
