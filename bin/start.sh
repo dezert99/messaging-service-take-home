@@ -2,8 +2,13 @@
 
 set -e
 
-echo "Starting the application..."
-echo "Environment: ${ENV:-development}"
+echo "Starting the messaging service..."
+echo "Environment: ${NODE_ENV:-development}"
 
-# Add your application startup commands here
-echo "Application started successfully!" 
+# Build the TypeScript code
+echo "Building application..."
+npm run build
+
+# Start the application
+echo "Starting server on port ${PORT:-8080}..."
+npm start 
