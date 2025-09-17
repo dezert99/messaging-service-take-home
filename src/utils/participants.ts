@@ -4,6 +4,14 @@
  * This ensures bidirectional messages (A→B and B→A) belong to the same conversation
  */
 export function normalizeParticipants(from: string, to: string): [string, string] {
+  if (typeof from !== 'string' || typeof to !== 'string') {
+    throw new Error(`Invalid participant types: from=${typeof from}, to=${typeof to}`);
+  }
+  
+  if (!from || !to) {
+    throw new Error(`Empty participant values: from="${from}", to="${to}"`);
+  }
+  
   return from < to ? [from, to] : [to, from];
 }
 

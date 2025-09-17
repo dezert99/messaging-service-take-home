@@ -2,10 +2,11 @@ import { prisma } from '../lib/prisma';
 import { MessageType, MessageDirection, MessageStatus, ChannelType } from '@prisma/client';
 import { determineMessageType, getChannelType } from '../utils/messageType';
 import { findOrCreateConversation } from './conversationService';
-import { MockSmsProvider, MockEmailProvider, ProviderError } from '../providers';
+import { MockSmsProvider, MockEmailProvider } from '../providers';
+import { ProviderError as ProviderErrorInterface } from '../providers/interfaces';
 import { SendSmsRequest, SendEmailRequest } from '../types/requests';
 import { logger, logMessage, logError } from '../utils/logger';
-import { DatabaseError } from '../middleware/errorHandler';
+import { DatabaseError, ProviderError } from '../middleware/errorHandler';
 
 const smsProvider = new MockSmsProvider();
 const emailProvider = new MockEmailProvider();
@@ -107,7 +108,7 @@ export async function sendSmsMessage(request: SendSmsRequest) {
         metadata: {
           error: {
             message: (error as Error).message,
-            statusCode: (error as ProviderError).statusCode
+            statusCode: (error as ProviderErrorInterface).statusCode
           }
         }
       }
@@ -116,7 +117,7 @@ export async function sendSmsMessage(request: SendSmsRequest) {
     logMessage('failed', failedMessage);
 
     // Re-throw with provider status code
-    const providerError = error as ProviderError;
+    const providerError = error as ProviderErrorInterface;
     if (providerError.statusCode) {
       throw new ProviderError(providerError.message, 'twilio', providerError.statusCode?.toString());
     }
@@ -239,7 +240,7 @@ export async function sendEmailMessage(request: SendEmailRequest) {
           metadata: {
           error: {
             message: (error as Error).message,
-            statusCode: (error as ProviderError).statusCode
+            statusCode: (error as ProviderErrorInterface).statusCode
           }
         }
       }
@@ -248,7 +249,7 @@ export async function sendEmailMessage(request: SendEmailRequest) {
     logMessage('failed', failedMessage);
 
     // Re-throw with provider status code
-    const providerError = error as ProviderError;
+    const providerError = error as ProviderErrorInterface;
     if (providerError.statusCode) {
       throw new ProviderError(providerError.message, 'sendgrid', providerError.statusCode?.toString());
     }

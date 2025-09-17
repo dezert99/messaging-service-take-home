@@ -74,7 +74,7 @@ export const detailedRequestLogger = (req: Request, res: Response, next: Functio
 
   // Override res.end to log response
   const originalEnd = res.end;
-  res.end = function(chunk: any, encoding: any) {
+  res.end = function(chunk?: any, encoding?: any, cb?: any) {
     const duration = Date.now() - start;
     
     logger.info('Request completed', {
@@ -86,7 +86,8 @@ export const detailedRequestLogger = (req: Request, res: Response, next: Functio
       correlationId: (req as any).correlationId
     });
 
-    originalEnd.call(this, chunk, encoding);
+    // Call original end method with proper arguments
+    return originalEnd.call(this, chunk, encoding, cb);
   };
 
   next();

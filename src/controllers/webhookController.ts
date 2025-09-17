@@ -16,6 +16,20 @@ export async function handleInboundSms(req: Request, res: Response): Promise<voi
   const webhook: InboundSmsWebhook = req.body;
   
   try {
+    // Check for duplicate webhook by provider message ID
+    const existingMessage = await prisma.message.findFirst({
+      where: { providerMessageId: webhook.messaging_provider_id }
+    });
+    
+    if (existingMessage) {
+      logger.info('Duplicate webhook received, ignoring', {
+        providerMessageId: webhook.messaging_provider_id,
+        existingMessageId: existingMessage.id
+      });
+      res.status(200).send('OK');
+      return;
+    }
+    
     const messageType = determineMessageType(webhook);
     const channelType = getChannelType(messageType);
     
@@ -71,6 +85,20 @@ export async function handleInboundEmail(req: Request, res: Response): Promise<v
   const webhook: InboundEmailWebhook = req.body;
   
   try {
+    // Check for duplicate webhook by provider message ID
+    const existingMessage = await prisma.message.findFirst({
+      where: { providerMessageId: webhook.xillio_id }
+    });
+    
+    if (existingMessage) {
+      logger.info('Duplicate email webhook received, ignoring', {
+        providerMessageId: webhook.xillio_id,
+        existingMessageId: existingMessage.id
+      });
+      res.status(200).send('OK');
+      return;
+    }
+    
     const messageType = MessageType.EMAIL;
     const channelType = ChannelType.EMAIL;
     

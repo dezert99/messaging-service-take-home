@@ -70,6 +70,25 @@ export const sendEmailSchema = Joi.object({
   _forceError: forceErrorSchema.optional()
 });
 
+export const inboundSmsWebhookSchema = Joi.object({
+  from: Joi.string().required().min(1).max(100),
+  to: Joi.string().required().min(1).max(100),
+  type: Joi.string().valid('sms', 'mms').required(),
+  messaging_provider_id: Joi.string().required(),
+  body: Joi.string().required().min(1),
+  attachments: Joi.array().items(Joi.string().uri()).optional().allow(null),
+  timestamp: Joi.string().isoDate().required()
+});
+
+export const inboundEmailWebhookSchema = Joi.object({
+  from: Joi.string().email().required(),
+  to: Joi.string().email().required(),
+  xillio_id: Joi.string().required(),
+  body: Joi.string().required().min(1),
+  attachments: Joi.array().items(Joi.string().uri()).optional(),
+  timestamp: Joi.string().isoDate().required()
+});
+
 export function validateRequest(schema: Joi.ObjectSchema) {
   return (req: Request, res: Response, next: NextFunction) => {
     const { error } = schema.validate(req.body, { 

@@ -7,8 +7,8 @@ import { rateLimits } from '../config/rateLimits';
 const router = Router();
 
 // Create rate limiters for each endpoint
-const smsRateLimiter = createRateLimiter(rateLimits.sms);
-const emailRateLimiter = createRateLimiter(rateLimits.email);
+export const smsRateLimiter = createRateLimiter(rateLimits.sms);
+export const emailRateLimiter = createRateLimiter(rateLimits.email);
 
 // SMS/MMS endpoint
 router.post('/sms', 

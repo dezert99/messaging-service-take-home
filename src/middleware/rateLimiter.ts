@@ -75,6 +75,11 @@ export class RateLimiter {
       }
     }
   }
+
+  // Method to reset all buckets (for testing)
+  public reset(): void {
+    this.buckets.clear();
+  }
 }
 
 // Factory function to create rate limiters

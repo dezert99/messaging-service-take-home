@@ -30,7 +30,7 @@ export async function getConversations(req: Request, res: Response, next: NextFu
     }
     
     // Get participant filter (required for this endpoint)
-    const participant = query.participant;
+    const participant = query.participant ? decodeURIComponent(query.participant) : undefined;
     if (!participant) {
       throw new ValidationError('participant query parameter is required');
     }
@@ -100,6 +100,12 @@ export async function getConversationMessages(req: Request, res: Response, next:
       throw new ValidationError('Conversation ID is required');
     }
     
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(conversationId)) {
+      throw new ValidationError('Invalid conversation ID format');
+    }
+    
     // Parse pagination parameters
     const query = req.query as { page?: string; limit?: string };
     const page = Math.max(1, parseInt(query.page || '1'));
@@ -118,7 +124,9 @@ export async function getConversationMessages(req: Request, res: Response, next:
     
     if (!conversation) {
       res.status(404).json({
-        error: 'Conversation not found'
+        error: {
+          message: 'Conversation not found'
+        }
       });
       return;
     }
