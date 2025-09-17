@@ -36,7 +36,7 @@ bin/start.sh (MODIFY)
 
 
 Task 2: Database Setup with Prisma
-Status: 🔴 Not Started
+Status: ✅ COMPLETED
 Priority: HIGH
 Complexity: MODERATE
 Dependencies: Task 1

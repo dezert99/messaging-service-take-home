@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Conversation {
+  id            String      @id @default(uuid())
+  participant1  String      // Always lexicographically first
+  participant2  String      // Always lexicographically second
+  channelType   ChannelType
+  lastMessageAt DateTime
+  messages      Message[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  @@unique([participant1, participant2, channelType])
+  @@index([participant1, participant2, channelType])
+  @@index([participant1, channelType])
+  @@index([participant2, channelType])
+  @@index([lastMessageAt])
+}
+
+model Message {
+  id                 String           @id @default(uuid())
+  conversationId     String
+  conversation       Conversation     @relation(fields: [conversationId], references: [id])
+  from              String
+  to                String
+  type              MessageType      // SMS, MMS, or EMAIL
+  body              String           // Text for SMS/MMS, HTML for email
+  attachments       String[]         // Array of URLs
+  direction         MessageDirection // INBOUND or OUTBOUND
+  status            MessageStatus    // PENDING, SENT, DELIVERED, FAILED, RECEIVED
+  providerMessageId String?          // messaging_provider_id for SMS/MMS, xillio_id for email
+  provider          String?          // "twilio" or "sendgrid"
+  metadata          Json?            // For error codes, retry counts, etc.
+  timestamp         DateTime         // From the payload
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  
+  @@index([conversationId])
+  @@index([from, to])
+  @@index([providerMessageId])
+  @@index([timestamp])
+}
+
+model ProcessedEvent {
+  id          String   @id // sg_event_id
+  processedAt DateTime @default(now())
+  
+  @@index([processedAt])
+}
+
+enum ChannelType {
+  SMS    // Covers both SMS and MMS
+  EMAIL
+}
+
+enum MessageType {
+  SMS    // Text only
+  MMS    // Text with attachments
+  EMAIL
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageStatus {
+  PENDING    // Outbound message created but not sent
+  SENT       // Successfully sent to provider
+  DELIVERED  // Provider confirmed delivery
+  FAILED     // Provider returned error
+  RECEIVED   // Inbound message received via webhook
+}
